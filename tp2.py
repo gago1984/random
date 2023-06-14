@@ -267,7 +267,7 @@ X = con_0s_y_1s.iloc[:,np.squeeze(atributos_aleatorios_ceros)]
 Y = con_0s_y_1s.digito
 
 Nrep = 5
-valores_n = [5,10,15,20]
+valores_n = range(4,21,2)
 
 resultados_test = np.zeros((Nrep, len(valores_n)))
 resultados_train = np.zeros((Nrep, len(valores_n)))
@@ -327,7 +327,7 @@ X = con_0s_y_1s.iloc[:,np.squeeze(atributos_aleatorios_unos)]
 Y = con_0s_y_1s.digito
 
 Nrep = 5
-valores_n = [5,10,15,20]
+valores_n = range(4,21,2)
 
 resultados_test = np.zeros((Nrep, len(valores_n)))
 resultados_train = np.zeros((Nrep, len(valores_n)))
@@ -367,8 +367,8 @@ promedios_test = np.mean(resultados_test, axis = 0)
 # Grafico de la exactitud
 
 plt.figure(figsize=(4,3),dpi=100)
-plt.plot(valores_n, promedios_train, label = 'Train')
-plt.plot(valores_n, promedios_test, label = 'Test')
+plt.plot(valores_n, promedios_train,marker="o", label = 'Train',drawstyle="steps-post")
+plt.plot(valores_n, promedios_test,marker="o", label = 'Test',drawstyle="steps-post")
 plt.legend()
 plt.title('Exactitud del modelo de knn')
 plt.xlabel('Cantidad de vecinos')
@@ -418,8 +418,8 @@ while y < 12:
 h = [2,3,4,5,6,7,8,9,10,11]
 
 plt.figure(figsize=(4,3),dpi=100)
-plt.plot(h, promedios_por_atributos_train , label = 'Train')
-plt.plot(h, promedios_por_atributos_test , label = 'Test')
+plt.plot(h, promedios_por_atributos_train ,marker="o", label = 'Train',drawstyle="steps-post")
+plt.plot(h, promedios_por_atributos_test ,marker="o", label = 'Test',drawstyle="steps-post")
 plt.legend()
 plt.title('Exactitud del modelo de knn')
 plt.xlabel('Cantidad de atributos')
@@ -430,7 +430,7 @@ plt.ylabel('Exactitud (accuracy)')
 y=2
 promedios_por_atributos_train = []
 promedios_por_atributos_test = []
-while y < 20:
+while y < 12:
     filas = pixeles_sign_ceros.shape[0]
     filas_aleatorias = np.random.choice(filas, size=y, replace=False)
     atributos_aleatorios_ceros = pixeles_sign_ceros[filas_aleatorias] 
@@ -470,8 +470,8 @@ while y < 20:
 h = [2,3,4,5,6,7,8,9,10,11]
 
 plt.figure(figsize=(4,3),dpi=100)
-plt.plot(h, promedios_por_atributos_train , label = 'Train')
-plt.plot(h, promedios_por_atributos_test , label = 'Test')
+plt.plot(h, promedios_por_atributos_train ,marker="o", label = 'Train',drawstyle="steps-post")
+plt.plot(h, promedios_por_atributos_test ,marker="o", label = 'Test',drawstyle="steps-post")
 plt.legend()
 plt.title('Exactitud del modelo de knn')
 plt.xlabel('Cantidad de atributos')
