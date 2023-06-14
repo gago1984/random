@@ -1,0 +1,67 @@
+#%%
+
+clases = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+
+clf = DecisionTreeClassifier(criterion='entropy',max_depth=4)
+clf = clf.fit(X,Y)
+fig = plt.figure(figsize=(10, 8))
+_ = tree.plot_tree(clf,class_names= clases,filled=True,fontsize=6)
+plt.savefig('./data/arbol_de_decision_entropy.png', dpi=300)
+plt.show()
+
+clf = DecisionTreeClassifier(criterion='gini',max_depth=4)
+clf = clf.fit(X,Y)
+
+fig = plt.figure(figsize=(10, 8))
+_ = tree.plot_tree(clf,class_names=clases,filled=True,fontsize=6)
+plt.savefig('./data/arbol_de_decision_gini.png', dpi=300)
+plt.show()
+
+clf = DecisionTreeClassifier(criterion='log_loss',max_depth=4)
+clf = clf.fit(X,Y)
+fig = plt.figure(figsize=(10, 8))
+_ = tree.plot_tree(clf,class_names=clases,filled=True,fontsize=6)
+plt.savefig('./data/arbol_de_decision_log_loss.png', dpi=300)
+plt.show()
+
+clf = DecisionTreeClassifier(criterion='entropy')
+clf = clf.fit(X,Y)
+# fig = plt.figure(figsize=(10, 8))
+# _ = tree.plot_tree(clf,class_names=clases,filled=True,fontsize=6)
+# plt.savefig('./data/arbol_de_decision_sin_depth.png', dpi=300)
+# plt.show()
+
+clf = DecisionTreeClassifier(criterion='entropy',max_depth=4)
+clf = clf.fit(X,Y)
+k_folds = KFold(n_splits = 5)
+scores = cross_val_score(clf, X, Y, cv = k_folds)
+
+print("Cross Validation Scores: ", scores)
+print("Average CV Score: ", scores.mean())
+print("Number of CV Scores used in Average: ", len(scores))
+
+clf = DecisionTreeClassifier(criterion='entropy',max_depth=6)
+clf = clf.fit(X,Y)
+
+clf = DecisionTreeClassifier(criterion='entropy',max_depth=8)
+clf = clf.fit(X,Y)
+
+clf = DecisionTreeClassifier(criterion='entropy',max_depth=10)
+clf = clf.fit(X,Y)
+
+clf = DecisionTreeClassifier(criterion='entropy',max_depth=12)
+clf = clf.fit(X,Y)
+
+clf = DecisionTreeClassifier(criterion='entropy',max_depth=15)
+clf = clf.fit(X,Y)
+
+clf = DecisionTreeClassifier(criterion='entropy',max_depth=20)
+clf = clf.fit(X,Y)
+
+#%%
+# =============================================================================
+#  Ejercicio 7
+# =============================================================================
+
+clf = DecisionTreeClassifier(criterion='entropy',max_depth=8)
+clf = clf.fit(X,Y)
