@@ -427,6 +427,57 @@ plt.ylabel('Exactitud (accuracy)')
 
 
 #%%
+y=2
+promedios_por_atributos_train = []
+promedios_por_atributos_test = []
+while y < 20:
+    filas = pixeles_sign_ceros.shape[0]
+    filas_aleatorias = np.random.choice(filas, size=y, replace=False)
+    atributos_aleatorios_ceros = pixeles_sign_ceros[filas_aleatorias] 
+    print(atributos_aleatorios_ceros)
+    
+    X = con_0s_y_1s.iloc[:,np.squeeze(atributos_aleatorios_ceros)]
+    Y = con_0s_y_1s.digito
+    
+    Nrep = 5
+    valores_n = [12]
+    
+    resultados_test = np.zeros((Nrep, len(valores_n)))
+    resultados_train = np.zeros((Nrep, len(valores_n)))
+    
+    
+    for i in range(Nrep):
+        j=0
+        X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size = 0.3)
+        while j < len(valores_n):
+            k = valores_n[j]
+            model = KNeighborsClassifier(n_neighbors = k)
+            model.fit(X_train, Y_train) 
+            Y_pred = model.predict(X_test)
+            Y_pred_train = model.predict(X_train)
+            acc_test = metrics.accuracy_score(Y_test, Y_pred)
+            acc_train = metrics.accuracy_score(Y_train, Y_pred_train)
+            resultados_test[i, j] = acc_test
+            resultados_train[i, j] = acc_train
+            j=j+1
+    
+    promedios_train = np.mean(resultados_train, axis = 0) 
+    promedios_test = np.mean(resultados_test, axis = 0) 
+    promedios_por_atributos_train.append(promedios_train)
+    promedios_por_atributos_test.append(promedios_test)
+    y=y+1
+
+h = [2,3,4,5,6,7,8,9,10,11]
+
+plt.figure(figsize=(4,3),dpi=100)
+plt.plot(h, promedios_por_atributos_train , label = 'Train')
+plt.plot(h, promedios_por_atributos_test , label = 'Test')
+plt.legend()
+plt.title('Exactitud del modelo de knn')
+plt.xlabel('Cantidad de atributos')
+plt.ylabel('Exactitud (accuracy)')
+
+#%%
 # =============================================================================
 # Ejercicio 5
 # Para comparar modelos, utilizar validación cruzada. Comparar modelos
@@ -602,9 +653,34 @@ execution_time = end_time - start_time
 print(f"Tiempo de ejecución: {execution_time} segundos")
 #%%
 #Al parecer 12 es la profundidad optima
+
+# =============================================================================
+# Ejercicio 7
+# =============================================================================
+
+X = df.iloc[:,1:]
+Y = df['digito']
+
 start_time = time.time()
 
 clf = DecisionTreeClassifier(criterion = "entropy",max_depth = 12)
+k_folds = KFold(n_splits = 10)
+scores = cross_val_score(clf, X, Y, cv = k_folds)
+
+print("Cross Validation Scores: ", scores)
+print("Average CV Score: ", scores.mean())
+print("Number of CV Scores used in Average: ", len(scores))
+
+end_time = time.time()
+execution = end_time - start_time
+execution_minutos = int(execution_time // 60)
+execution_segundos = np.round(execution_time % 60,4)
+
+print(f"Tiempo de ejecución: {execution_minutos} minutos {execution_segundos} segundos")
+
+start_time = time.time()
+
+clf = DecisionTreeClassifier(criterion = "gini",max_depth = 12)
 k_folds = KFold(n_splits = 10)
 scores = cross_val_score(clf, X, Y, cv = k_folds)
 
