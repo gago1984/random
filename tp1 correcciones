@@ -11,7 +11,6 @@ Original file is located at
 ##Carga de modulos y dataframes
 """
 
-
 import pandas as pd
 import re 
 from unidecode import unidecode
@@ -359,13 +358,11 @@ df5_letra = df5_letra.replace({'EXPLOTACION DE MINAS Y CANTERAS' : 'EXPLOTACIÓN
 df5_letra.letra_desc = df5_letra.letra_desc.apply(sacar_espacios_en_extremos) 
 # esta función elimina los espacios al principio y final de las palabras gracias a la función strip
 
-
 #%%
 """ DF 1 : PADRON """
 
 "--------------Tratamiento de NaNs-------------------"
 
-#En columna rubro y productos vemos los casos particulares
 #Veamos si para un producto."CAMPO INCULTO" aplica un valor en especifico para 
 #la columna rubro
 #Filtramos nans con mascara para evitar mensaje de error:
@@ -373,9 +370,9 @@ mask = ~df1.rubro.isna()
 df1_rubro_productos_sinNan = df1.loc[df1.productos.str.contains("INCULTO") & mask,["productos","rubro"]]
 #Vemos que INCULTO refiere al rubro AGRICULTURA, redefinimos los nan
 df1_producto_inculto_conNan = df1.loc[df1.rubro.isna(),["rubro","productos"]]
-df1.at[853, 'rubro'] = sin_definir
-df1.at[908, 'rubro'] = sin_definir
-df1.at[908, 'productos'] = sin_definir
+df1.at[854, 'rubro'] = sin_definir
+df1.at[880, 'rubro'] = sin_definir
+df1.at[909, 'rubro'] = sin_definir
 #luego aquellas las que tanto en productos y rubro tengo nan:
 mask = df1.rubro.isna() & df1.productos.isna()
 df1.loc[mask, ['rubro', 'productos']] = [sin_definir for col in ['rubro', 'productos']]
@@ -393,203 +390,180 @@ df1.loc[terminan_en_punto,'rubro'] = df1.loc[terminan_en_punto,'rubro'].str.repl
 f = df1.rubro.str.contains("\.")
 aux=df1.loc[f,"rubro"]
 
-#Verificamos si siguen habiendo nans
-df1.rubro.isna().sum() #0
-df1.productos.isna().sum() #0
-
 #%%
-"""### Columna producto
 
-Vemos los valores con parentesis
-"""
-
-prod_con_par = df1.loc[df1.productos.str.contains("\("),"productos"].unique()
-#hay 1 valor con "HORTICULTURA: (RAIZ, HOJAS, FRUTOS) - FRUTALES: (CAROZO, PEPITA, CITRI ..."
-con_comas_en_parentesis = df1.productos.str.contains("RAIZ, HOJAS, FRUTOS")
-df1.loc[con_comas_en_parentesis,:]
-
-#Lo modificamos manualmente para que rubro contemple a FRUTICULTURA, y productos no tenga parentesis
-crear_y_añadir_fila(df1,124,"rubro","HORTICULTURA")
-#nos falta modificar su columna productos a esta fila creada
-df1.at[len(df1)-1, "productos"] = "RAIZ,HOJAS,FRUTOS"
-
-crear_y_añadir_fila(df1,124,"rubro","FRUTICULTURA")
-#nos falta midificar su columna productos a esta fila creada
-df1.at[len(df1)-1, "productos"] = "CAROZO,PEPITA,CITRICOS"
-#Borramos la fila 124
-df1.drop([124],inplace=True)
-df1.reset_index(drop=True, inplace=True)
-
-"""A partir de aqui es seguro separar por comas:
-Para las filas restantes que contienen parentesis se decidio que son irrelevantes, procedemos a quitar los parentesis excepto para unas pocas en particular que contienen "(CARNE Y LANA)"
-"""
-
-#hay 5 valores con "(CARNE Y LANA)"
-con_carne_lana = df1.productos.str.contains("CARNE Y LANA")
-df1.loc[con_carne_lana,:]
-
-"""Se decide redefinir el atributo productos a "CARNE BOVINA,CARNE OVINA,LANA OVINA"
-"""
-
-df1.loc[con_carne_lana,"productos"] = "CARNE BOVINA,CARNE OVINA,LANA"
-
-"""Separamos el atributo productos por coma, ademas sacamos lo que está entre parentesis"""
-
-col = "productos"
-df1.productos = df1.productos.apply(quitar_parentesis)
-#Spliteamos por comas
-atomizarColumna(df1,col,',')
-#verificamos si siguen habiendo parentesis
-df1.loc[df1.productos.str.contains("\("),"productos"] #0
-
-"""vemos que hay distintos tipos de lana. Ademas para no confundir tenemos en cuenta que "AVELLANA" contiene a "LANA"
-"""
-
-df1.loc[df1.productos.str.contains("LANA") &  ~df1.productos.str.contains("AVELLANA"),["productos","rubro"]]
-
-"""Se decide que lana corresponde al rubro procesamiento textil
-y los distintos tipos de lanas se unifican en un solo producto: "lana". Excepto 3 en donde sus valores son "TOPS DE LANA" o "BLOUSSE" que quedan en sus respectivos rubros
-"""
-
-contienen_lana = df1.productos.str.contains("LANA") &  ~df1.productos.str.contains("AVELLANA") & ~df1.productos.str.contains("BLOUSSE") & ~df1.productos.str.contains("TOPS DE LANA")
-df1.loc[contienen_lana,["rubro","productos"]] = ["PROCESAMIENTO TEXTIL","LANA"]
-#verifico
-df1.loc[contienen_lana,["rubro","productos"]]
-
-#Spliteamos por ; - + ?
-atomizarColumna(df1,col,';')
-atomizarColumna(df1,col,'-')
-atomizarColumna(df1,col,'+')
-atomizarColumna(df1,col,'?')
-
-"""Quitamos el caracter "." si lo hubiera"""
-
-df1.productos = df1.productos.apply(reemplazar,args=(".",""))
+# Corregimos algunas cosas a mano
 
 con_campo_monte_o_pasturas = df1.productos.str.contains("CAMPO") | df1.productos.str.contains("MONTE") | df1.productos.str.contains("PASTURAS")
-df1.loc[con_campo_monte_o_pasturas,["rubro","productos"]]
-
 #Definimos el producto como "INCULTO" y rubro "AGRICULTURA"
 df1.loc[con_campo_monte_o_pasturas,"productos"] = "INCULTO"
 df1.loc[con_campo_monte_o_pasturas,'rubro'] = "AGRICULTURA"
 
-#Algunos registros se cambian manualmente, pues si atomizamos por " y " daran problemas de calidad
-con_y = df1.productos.str.contains(" Y ")
-ver_registros= df1.loc[con_y,["rubro","productos"]]
-ver_registros
-df1.loc[2775,["rubro","productos"]] = ["ELABORACION","PULPA DE MANZANA Y JUGO DE MANZANA Y MANZANA DESHIDRATADA"]
-df1.loc[3200,["rubro","productos"]] = ["PROCESAMIENTO","CEREALES Y OLEAGINOSAS"]
-df1.loc[2880,"productos"] = "JUGO DE LIMON Y ACEITE DE LIMON"
-df1.loc[3254,["rubro","productos"]] = ["ALMACENAMIENTO Y FRIO","JUGO CONCENTRADO DE PERA Y PURE DE PERA"]
-df1.loc[2781,["rubro","productos"]] = ["ALMACENAMIENTO Y FRIO","JUGO CONCENTRADO DE PERA Y JUGO CONCENTRADO DE MANZANA"]
-df1.loc[2246,["rubro","productos"]] = ["FRUTICULTURA-HORTICULTURA","FRUTAS Y HORTICULTURA"]
-df1.loc[2219,"rubro"] = "FRUTICULTURA-HORTICULTURA"
-df1.loc[3186,["rubro","productos"]] = ["VENTAS","MANI"]
-df1.loc[3165,["rubro","productos"]] = ["VENTAS","CEREALES Y OLEAGINOSAS"]
-df1.loc[1576,"productos"] = "CEREALES Y OLEAGINOSAS"
-df1.loc[2768,["rubro","productos"]] = ["ELABORACION","JUGO CONCENTRADO DE PERA Y JUGO CONCENTRADO DE MANZANA"]
-df1.loc[2737,["rubro","productos"]] = ["ELABORACION","JUGO CONCENTRADO DE PERA Y JUGO CONCENTRADO DE MANZANA"]
-df1.loc[2782,"rubro"] = "FRUTICULTURA"
-df1.loc[2786,"rubro"] = "FRUTICULTURA"
-df1.loc[2221,"rubro"] = "APICULTURA"
-df1.loc[2878,"rubro"] = "APICULTURA"
-df1.loc[2339,"rubro"] = "APICULTURA"
-df1.loc[3166,"rubro"] = "APICULTURA"
-df1.loc[3276,"rubro"] = "APICULTURA"
+#%%
+"""-------------------------------PRODUCTOS--------------------------------------------"""
 
-#Atomizamos por " Y " y ademas sacamos los espacios en blanco en los extremos
-atomizarColumna(df1,col,' Y ')
-df1.productos = df1.productos.apply(sacar_espacios_en_extremos)
+df1_productos = df1.copy()
+df1_productos = df1_productos[['id_operador','productos']]
+
+prod_con_parentesis = df1_productos.loc[df1_productos.productos.str.contains("\("),"productos"].unique()
+#hay 1 valor con "HORTICULTURA: (RAIZ, HOJAS, FRUTOS) - FRUTALES: (CAROZO, PEPITA, CITRI ..."
+con_comas_en_parentesis = df1_productos.productos.str.contains("RAIZ, HOJAS, FRUTOS")
+vista = df1_productos.loc[con_comas_en_parentesis,:]
+##Lo modificamos manualmente para que rubro contemple a FRUTICULTURA, y productos no tenga parentesis
+#crear_y_añadir_fila(df1_productos,124,"rubro","HORTICULTURA")
+##nos falta modificar su columna productos a esta fila creada
+#df1_productos.at[len(df1_productos)-1, "productos"] = "RAIZ,HOJAS,FRUTOS"
+#
+#crear_y_añadir_fila(df1_productos,124,"rubro","FRUTICULTURA")
+##nos falta midificar su columna productos a esta fila creada
+#df1_productos.at[len(df1_productos)-1, "productos"] = "CAROZO,PEPITA,CITRICOS"
+##Borramos la fila 124
+#df1_productos.drop([124],inplace=True)
+#df1_productos.reset_index(drop=True, inplace=True)
+#hay 3 valores con "(CARNE Y LANA)"
+con_carne_lana = df1_productos.productos.str.contains("CARNE Y LANA")
+df1_productos.loc[con_carne_lana,"productos"] = "CARNE BOVINA,CARNE OVINA,LANA"
+df1_productos.productos = df1_productos.productos.apply(quitar_parentesis)
 
 #%%
-"""###Columna rubro"""
+#Spliteamos por comas
+col = "productos"
+atomizarColumna(df1_productos,col,',')
+#verificamos si siguen habiendo parentesis
+print('Cantidad de comas en df1_productos :' , len(df1.loc[df1_productos.productos.str.contains("\("),"productos"])) #0
 
-col = "rubro"
-df1.loc[df1.rubro.str.contains("INDEFINIDO"),["rubro","categoria_desc","productos"]]
+#%%
 
-#Hay casos en donde esta el rubro elaboracion, pero al separar por comas se rompe. Lo corregimos manualmente
-df1.loc[df1.rubro.str.contains("ACEITE ESCENCIAL Y PULPA DE CITRICOS"),["rubro","productos"]]
+#Se decide que lana corresponde al rubro procesamiento textil y los distintos tipos de lanas se unifican en un solo producto: "lana". 
+# Excepto 3 en donde sus valores son "TOPS DE LANA" o "BLOUSSE" que quedan en sus respectivos rubros
+contienen_lana = df1_productos.productos.str.contains("LANA") &  ~df1_productos.productos.str.contains("AVELLANA") & ~df1_productos.productos.str.contains("BLOUSSE") & ~df1_productos.productos.str.contains("TOPS DE LANA")
+df1_productos.loc[contienen_lana,"productos"] = "LANA"
 
-df1.loc[df1.rubro.str.contains("ACEITE ESCENCIAL Y PULPA DE CITRICOS"),"rubro"] = "ELABORACION"
+contienen_lana = df1.rubro.str.contains('INDEFINIDO') & df1.productos.str.contains("LANA") &  ~df1.productos.str.contains("AVELLANA") & ~df1_productos.productos.str.contains("BLOUSSE") & ~df1_productos.productos.str.contains("TOPS DE LANA")
+df1.loc[contienen_lana,'rubro'] = "PROCESAMIENTO TEXTIL"
 
-#Veamos para separar por comas
-df1.loc[df1.rubro.str.contains(","),["rubro","productos"]]
+#verifico
+df1_productos.loc[contienen_lana,"productos"]
+df1.loc[contienen_lana,"rubro"]
 
-col = "rubro"
-#no hay casos particulares que arreglar
-atomizarColumna(df1,col,',')
+#%%
+"""-------------------------------Atomizamos df1_productos--------------------------------------------"""
 
-#Veamos para separar por punto y coma
-df1.loc[df1.rubro.str.contains(";"),["rubro","productos"]]
+#Quitamos puntos
 
-#No hay casos particulares, separamos:
-atomizarColumna(df1,"rubro",';')
+df1_productos.productos = df1_productos.productos.apply(reemplazar,args=(".",""))
 
-#Veamos para separar por guiones
-df1.loc[df1.rubro.str.contains("-"),["rubro","productos"]]
+#%%
 
-#No hay casos particulares, separamos:
-atomizarColumna(df1,"rubro",'-')
+# Puntos y comas
+atomizarColumna(df1_productos,col,';')
+#%%
+# Guiones
+atomizarColumna(df1_productos,col,'-')
+#%%
+# Simbolos MÁS
+atomizarColumna(df1_productos,col,'+')
+#%%
+# Signos de Interrogación
+atomizarColumna(df1_productos,col,'?')
+#%%
+# Ygriegas
+atomizarColumna(df1_productos,col,' Y ')
+#%%
 
-#Veamos para separar por barras
-df1.loc[df1.rubro.str.contains("/"),["rubro","productos"]]
+#Limpiamos los espacios en blanco
 
-#No hay casos particulares, separamos:
-atomizarColumna(df1,"rubro",'/')
+df1_productos.productos = df1_productos.productos.apply(sacar_espacios_en_extremos)
 
-#Luego de separar por barra, surgieron otra vez errrores de tipo
-df1.loc[df1.rubro == "AGICULTURA","rubro"] = "AGRICULTURA"
+#%%
+##Es posible que tengamos problemas al separar por " Y ". La tarea no es trivial.  VERIFICAMOS
+msk = df1_productos.productos.str.contains(" Y ")
+b = df1_productos.loc[msk,:]
+print(len(b))
+
+# Perfecto
+
+#%%
+"""-------------------------------RUBRO--------------------------------------------"""
+
+#Lo modificamos manualmente para que rubro contemple a FRUTICULTURA
+df1.loc[124,"rubro"] = "HORTICULTURA,FRUTICULTURA"
+
+#Para todos aquellos productos que tengan "INCULTO", definir en columna rubro AGRICULTURA
+filtro = df1.productos.str.contains("INCULTO")
+df1.loc[filtro,'rubro'] = "AGRICULTURA"
+
+#Todos los productos que contengan la palabra campo, natural reemplazar el valor por inculto
+filtro = df1.productos.str.contains("CAMPO") | df1.productos.str.contains("MONTE") | df1.productos.str.contains("PASTURAS")
+df1.loc[filtro,"rubro"] = "INCULTO"
+
+#Aquellos que tienen categoria "Comercializadores" y no tienen rubro, le definiremos como "VENTAS"
+df1.loc[df1.rubro.str.contains("INDEFINIDO") & df1.categoria_desc.str.contains("Comercializadores"),"rubro"] = "VENTAS"
+
+# Corregimos 3 casos a mano en donde dice"--------------Tratamiento de NaNs-------------------" 'AGICULTURA'
+
+df1.at[553, 'rubro'] = 'AGRICULTURA/FRUTICULTURA'
+df1.at[144, 'rubro'] = 'AGRICULTURA/HORTICULTURA'
+df1.at[549, 'rubro'] = 'AGRICULTURA/HORTICULTURA'
 
 #Veamos si hay puntos
-df1.loc[df1.rubro.str.contains("\."),"rubro"]
-#Actuan como separador:
-atomizarColumna(df1,"rubro",'\.')
+print('Cantidad de Puntos en df1.rubro:',len(df1.loc[df1.rubro.str.contains("\."),"rubro"]))
+df1.rubro = df1.rubro.apply(reemplazar,args=(".",","))
+print('Cantidad de Puntos en df1.rubro luego de limpiar:',len(df1.loc[df1.rubro.str.contains("\."),"rubro"]))
+print('Cantidad de Puntos y coma en df1.rubro:',len(df1.loc[df1.rubro.str.contains("\."),"rubro"]))
+df1.rubro = df1.rubro.apply(reemplazar,args=(";",","))
+print('Cantidad de Puntos y coma en df1.rubro luego de limpiar:',len(df1.loc[df1.rubro.str.contains("\."),"rubro"]))
 
-#Es posible que tengamos problemas al separar por " Y ". La tarea no es trivial.
-df1.loc[df1.rubro.str.contains(" Y "),["rubro","productos"]]
+#%%
+# Espacios en blanco en rubro
 
-#Caso en donde contiene la palabra "PROCESAMIENTO"
-df1.loc[df1.rubro.str.contains(" Y ") & df1.rubro.str.contains("PROCESAMIENTO"),["rubro","productos"]].rubro.value_counts()
-
-#Hay un solo caso particular: "PROCESAMIENTO DE TE Y MOLINO YERBA MATE". Los demas solo pueden reemplazarse por la palabra "PROCESAMIENTO"
-df1.loc[df1.rubro.str.contains("PROCESAMIENTO FRUTALES Y HORTALIZAS") |
-        df1.rubro.str.contains("PROCESAMIENTO CEREALES Y OLEAGINOSAS") |
-        df1.rubro.str.contains("PROCESAMIENTO DE CEREALES Y OLEAGINOSAS") |
-        df1.rubro.str.contains("PROCESAMIENTO DE MANI Y SOJA")
-        ,"rubro"] = "PROCESAMIENTO"cia_id'}, inplace=True)
-
-#Veamos mas casos
-df1.loc[df1.rubro.str.contains(" Y ") ,["rubro","productos"]].rubro.value_counts()
-
-df1.loc[df1.rubro.str.contains("ACOPIO Y ACONDICIONAMIENTO DE GRANOS") ,"rubro",] = "ACOPIO-ACONDICIONAMIENTO"
-df1.loc[df1.rubro.str.contains("FRACCIONAMIENTO Y DEPOSITO DE HIERBAS AROMATICAS Y MEDICINALES") ,"rubro",] = "FRACCIONAMIENTO-DEPOSITO"
-df1.loc[df1.rubro.str.contains("ELABORACION DE  JUGOS CONCENTRADOS Y FABRICA DE ACEITES ESENCIALES") ,"rubro",] = "ELABORACION"
-df1.loc[df1.rubro.str.contains("EMPAQUE Y FRIGORIFICO DE FRUTAS NO CITRICAS") ,"rubro",] = "EMPAQUE-FRIGORIFICO"
-df1.loc[df1.rubro.str.contains("EMPAQUE Y FRIGORIFICO FRUTAS NO CITRICAS ") ,"rubro",] = "EMPAQUE-FRIGORIFICO"
-df1.loc[df1.rubro.str.contains("ELABORACION DE JUGO CONCENTRADO DE MANZANA Y PERA") ,"rubro",] = "ELABORACION"
-df1.loc[df1.rubro.str.contains("MOLINO Y FRACCIONAMIENTO DE TE") ,"rubro",] = "MOLINO-FRACCIONAMIENTO"
-df1.loc[df1.rubro.str.contains("ELABORACION Y EXTRACCION DE ACEITE") ,"rubro",] = "ELABORACION-EXTRACCION"
-df1.loc[df1.rubro.str.contains("BODEGA VITIVINICOLA Y ELABORACION DE  VINAGRE") ,"rubro",] = "BODEGA-ELABORACION"
-df1.loc[df1.rubro.str.contains("EMPAQUE DE HORTALIZAS Y FRUTAS NO CITRICAS") ,"rubro",] = "EMPAQUE"
-df1.loc[df1.rubro.str.contains("ELABORACION DE DULCES Y FRUTAS EN ALMIBAR") ,"rubro",] = "ELABORACION"
-df1.loc[df1.rubro.str.contains("PROCESAMIENTO DE TE Y MOLINO YERBA MATE") ,"rubro",] = "PROCESAMIENTO-MOLINO"
-df1.loc[df1.rubro.str.contains("ELABORACION DE MANZANA Y PERA DEHIDRATADA") ,"rubro",] = "ELABORACION"
-df1.loc[df1.rubro.str.contains("ALMACENAMIENTO Y FRIO PARA FRUTAS NO CITRICAS") ,"rubro",] = "ALMACENAMIENTO-FRIO"
-df1.loc[df1.rubro.str.contains("EXTRACCION DE ACEITE Y ELABORACION DE ACEITUNAS Y OTROS") ,"rubro",] = "EXTRACCION-ELABORACION"
-df1.loc[df1.rubro.str.contains("PROCESADO Y ENVASADO DE HORTALIZAS") ,"rubro",] = "PROCESADO-ENVASADO"
-df1.loc[df1.rubro.str.contains("ELABORACION DE JUGOS Y BODEGA VITIVINICOLA") ,"rubro",] = "ELABORACION-BODEGA"
-df1.loc[df1.rubro.str.contains("FRACCIONAMIENTO Y EMPAQUE DE ARROZ") ,"rubro",] = "FRACCIONAMIENTO-EMPAQUE"
-df1.loc[df1.rubro.str.contains("FRIGORIFICOS Y EMPAQUE PARA  FRUTAS") ,"rubro",] = "FRIGORIFICOS-EMPAQUE"
-
-#Definimos el rubro "APICULTURA" y productos "MIEL" en 5 casos:
-df1.loc[df1.rubro.str.contains("EXTRACCION Y FRACCIONAMIENTO DE MIEL"),["rubro","productos"]]
-
-df1.loc[df1.rubro.str.contains("EXTRACCION Y FRACCIONAMIENTO DE MIEL"),["rubro","productos"]] = ["APICULTURA","MIEL"]
-
-#Solo falta separar por " Y ", "-". Finalmente quitar espacios en blanco extremos
-atomizarColumna(df1,"rubro",' Y ')
-atomizarColumna(df1,"rubro",'-')
 df1.rubro = df1.rubro.apply(sacar_espacios_en_extremos)
+
+#%%
+"""-------------------------------ESTABLECIMIENTO--------------------------------------------"""
+df1.loc[df1.establecimiento == "NC","establecimiento"] = sin_definir
+df1.to_csv('./TablasLimpias/df1.csv', index=False)
+
+#%%
+"""
+"--------------AÑADIENDO LAS CLASES A LOS OPERADORES------------------"
+Añadimos una Clae2 a cada operador para poder relacionarlo con el df1 con el df2 y poder asociarles a futuro 
+un salario promedio según la actividad y el departamento de cada operador.
+
+"""
+
+rubros_unicos = df1['rubro'].drop_duplicates()
+
+claves = rubros_unicos.copy().reset_index(drop=True)
+valores = pd.Series([1,1,1,1,1,1,1,1,2,1,999,1,1,3,999,10,10,10,52,10,10,10,10,10,10,999,10,10,10,10,
+                     10,10,21,10,10,10,10,10,10,52,11,10,10,10,10,13,10,10,10,10,11,11,11,10,10,10,11,
+                     10,52,11,10,11,10,10,11,10,10,52,10,10,10,10,11,10,10,10,10,52,10,10,10,10,11,
+                     11,11,10,11,10,10,10,10,10,10,10,10,999])
+
+claves_y_valores = pd.DataFrame({'claves':claves, 'valores' : valores})
+
+
+diccionario_clase = {}
+
+for clave, valor in zip(claves, valores):
+    diccionario_clase[clave] = valor
+    
+
+# Decidimos asignarle clae2 = 999 a los que tienen rubro INDEFINIDO
+
+df1["clae2"] = df1["rubro"].apply(lambda rubro: diccionario_clase.get(rubro))
+df1 = df1.astype({"clae2": int})
+
+# Agregamos una columna clae2 en el df1 que indique su clase.
+
+print('Cantidad de NaNs en la columna clae2 que recien agregamos:',len(df1[df1.clae2.isna()]))
+
+#%%
+#Checkpoint
+
+df1_padron_atom = './dataframes/checkpoints/padron_atomizado.csv'
+df1 = pd.read_csv(df1_padron_atom)
+
 #%%
 
 """##Exportamos todos los csv a la carpeta TablasLimpias
