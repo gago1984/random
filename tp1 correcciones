@@ -171,7 +171,7 @@ df4 = df4.append([{'departamento_id': 1002, 'departamento': 'DEPARTAMENTO_DESCON
 
 """ DICCIONARIO DEPARTAMENTO"""
 
-df4_departamento = df4[['departamento_id', 'departamento']].drop_duplicates().reset_index(drop=True)
+df4_departamento = df4[['departamento_id', 'departamento','provincia_id']].drop_duplicates().reset_index(drop=True)
 
 """ DICCIONARIO PROVINCIA """
 
@@ -181,8 +181,8 @@ df4_provincia = df4[['provincia_id','provincia']].drop_duplicates().reset_index(
 """Armamos el diccionario de DF4"""
 
 # df4_dict es la versión normalizada de df4 que se conecta mediante la PK con df4_departamento y df4_provincia
-df4_dict = df4.drop('departamento',axis=1)
-df4_dict = df4_dict.drop('provincia',axis=1)
+df4_limpio = df4.drop('departamento',axis=1)
+df4_limpio = df4_limpio.drop('provincia',axis=1)
 
 #%%
 """ DF3 : LISTADO DE LOCALIDADES CENSALES SEGÚN EL INDEC """
@@ -269,6 +269,28 @@ print('Cantidad de NaNs en la columna departamento_id del df1(Padron):', len(df1
 #Exito
 
 #%%
+
+""" Por último chequeamos que cada departamento_id de df1 este en el diccionario de departamento """
+
+df1[~df1.departamento_id.isin(df4.departamento_id)] 
+
+""" Hay 3 entradas que tienen id 94008 que son de PROVINCIA: TIERRA DEL FUEGO, DEPARTAMENTO : RIO GRANDE 
+
+Dado que el DataFrame 2 de salarios privados tiene la ID de RIO GRANDE como 94007, y la de USHUAIA COMO 94014. 
+Osea que nuestro diccionario de departamentos esta bien 
+Pero el ID esta mal puesto en df1 asi que lo cambiamos a mano. (Solo cambiamos 94008 ya que no hay 94015 )"""
+
+df1.loc[[970,971,972], "departamento_id"] = 94007
+
+#%%
+
+print('Cantidad de id_departamentos que no estan en el diccionario de departamentos: ',
+      len(df1[~df1.departamento_id.isin(df4.departamento_id)])) 
+
+# Perfect
+
+
+#%%
 """ DF2 : SALARIOS PROMEDIOS PRIVADOS """
 
 """ Como saber cuantos registros de la columna 'w_median' son inferiores a 0 """
@@ -298,13 +320,22 @@ provNaN = df2['provincia_id'].isna() # Retorna 9156
 
 (dptoNaN == provNaN).sum() == len(df2)  # Esto da True.
 
-df2_limpio=df2.dropna() 
+df2 = df2.dropna() 
+# Armamos otro dataframe sin los NaNs ya que solo son 9156
 
-"""
-Armamos otro dataframe sin los NaNs. 
-El df2 original se puede preservarpor si se quiere hacer un análisis 
-exclusivamente de los salarios y el sector productivo del cual provienen.
-"""
+# Pasamos la fecha a mes y anio (año)
+
+df2['fecha'] = pd.to_datetime(df2['fecha'])
+df2['anio'] = df2['fecha'].dt.year
+df2['mes'] = df2['fecha'].dt.month
+
+df2 = df2.drop('fecha',axis=1)
+
+df2.insert(0,'anio',df2.pop('anio'))
+df2.insert(1,'mes',df2.pop('mes'))
+
+# Dropeamos la fecha original del dataframe y solo dejamos el mes y anio
+# Los posicionamos en la columna 0 y 1
 
 #%%
 """ DF 5 : DICCIONARIO DE CLASES """
@@ -541,7 +572,7 @@ valores = pd.Series([1,1,1,1,1,1,1,1,2,1,999,1,1,3,999,10,10,10,52,10,10,10,10,1
                      11,11,10,11,10,10,10,10,10,10,10,10,999])
 
 claves_y_valores = pd.DataFrame({'claves':claves, 'valores' : valores})
-
+# Podemos ver que clae2 tiene cada rubro en un dataframe
 
 diccionario_clase = {}
 
@@ -566,19 +597,35 @@ df1 = pd.read_csv(df1_padron_atom)
 
 #%%
 
+""" Primero, antes de exportar las tablas, hacemos algunos renames y drops
+para que los nombres de las tablas coincidan con el MER """
+
+df1 = df1.drop(['provincia_id','provincia','departamento','productos','categoria_desc','certificadora_deno'],axis=1)
+df1.insert(2,'clae2',df1.pop('clae2'))
+df1 = df1.rename(columns ={'departamento_id':'id_departamento', 'clae2' : 'id_clase','categoria_id' : 'id_categoria',
+                           'razón social' : 'razon_social', 'Certificadora_id' : 'id_certificadora',})
+df2 = df2.rename(columns ={'departamento_id':'id_departamento'})
+df3 = df3.rename(columns ={'municipio_nombre':'municipio'})
+df4_departamento = df4_departamento.rename(columns ={'departamento_id':'id_departamento', 'departamento' : 'nombre_departamento'
+                                                     ,'provincia_id' : 'id_provincia'})
+df4_provincia = df4_provincia.rename(columns ={'provincia_id' : 'id_provincia','provincia' : 'nombre_provincia'})
+df5_clae2 = df5_clae2.rename(columns ={'clae2':'id_clase','clae2_desc' : 'descripcion'})
+
+#%%
+
 """##Exportamos todos los csv a la carpeta TablasLimpias
 
 """
 
-df1.to_csv('./TablasLimpias/df1.csv', index=False)
+
+
+df1.to_csv('./TablasLimpias/operador.csv', index=False)
+df2.to_csv('./TablasLimpias/salario.csv', index=False)
+df5_clae2.to_csv('./TablasLimpias/clase.csv', index=False)
+df4_departamento.to_csv('./TablasLimpias/departamento.csv', index=False)
+df4_provincia.to_csv('./TablasLimpias/provincia.csv', index=False)
+
 df3_limpio.to_csv('./TablasLimpias/df3_limpio.csv', index=False)
-df3_provincia.to_csv('./TablasLimpias/df3_provincias.csv', index=False)
-df3_municipio.to_csv('./TablasLimpias/df3_municipios.csv', index=False) 
-df3_departamento.to_csv('./TablasLimpias/df3_departamentos.csv', index=False) 
-df3_localidad.to_csv('./TablasLimpias/df3_localidades.csv', index=False)
 df4_limpio.to_csv('./TablasLimpias/df4_limpio.csv', index=False)
-df4_departamento.to_csv('./TablasLimpias/df4_departamentos.csv', index=False)
-df4_provincia.to_csv('./TablasLimpias/df4_provincias.csv', index=False)
 df5_limpio.to_csv('./TablasLimpias/df5.csv', index=False)
-df5_clae2.to_csv('./TablasLimpias/df5_clae2.csv', index=False)
 df5_letra.to_csv('./TablasLimpias/df5_letras.csv', index=False)
