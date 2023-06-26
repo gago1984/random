@@ -100,6 +100,7 @@ df1['departamento'] = df1['departamento'].str.upper()
 df1['departamento'] = df1['departamento'].apply(quitar_acentos)
 
 df2.rename(columns={'id_provincia_indec': 'provincia_id'}, inplace=True)
+df2.rename(columns={'codigo_departamento_indec': 'departamento_id'}, inplace=True)
 
 df3 = df3.rename(columns ={'provincia_nombre':'provincia'})
 df3 = df3.rename(columns ={'departamento_nombre':'departamento'})
@@ -127,11 +128,70 @@ df4['provincia'] = df4['provincia'].str.upper()
 df4['provincia'] = df4['provincia'].apply(quitar_acentos)
 
 #%%
-""" 
-df3: Listado de las localidades censales según la base de datos censales del INDEC
 
+# Cosas a agregar para tener IDs en el df1 o para utilizar como diccionario más adelante
+
+df1['id_operador'] = df1.index.values + 1 
+df1.insert(0,'id_operador',df1.pop('id_operador'))
+
+
+#%%
+
+""" DF4 : DICCIONARIO DE DEPARTAMENTOS """
+
+""" Añadimos a df4 ciertas IDs para cuando dada una provincia y un nombre de departamento, no existe un departamento_ID
+que lo identifique entonces existe un ID que integra a estos no conocidos para cada provincia """
+
+df4 = df4.append([{'departamento_id': 1002, 'departamento': 'DEPARTAMENTO_DESCONOCIDO', 'provincia_id': 2, 'provincia': 'CIUDAD AUTONOMA BUENOS AIRES'},
+                  {'departamento_id': 1006, 'departamento': 'DEPARTAMENTO_DESCONOCIDO', 'provincia_id': 6, 'provincia': 'BUENOS AIRES'},
+                  {'departamento_id': 1010, 'departamento': 'DEPARTAMENTO_DESCONOCIDO', 'provincia_id': 10, 'provincia': 'CATAMARCA'},
+                  {'departamento_id': 1014, 'departamento': 'DEPARTAMENTO_DESCONOCIDO', 'provincia_id': 14, 'provincia': 'CORDOBA'},
+                  {'departamento_id': 1018, 'departamento': 'DEPARTAMENTO_DESCONOCIDO', 'provincia_id': 18, 'provincia': 'CORRIENTES'},
+                  {'departamento_id': 1022, 'departamento': 'DEPARTAMENTO_DESCONOCIDO', 'provincia_id': 22, 'provincia': 'CHACO'},
+                  {'departamento_id': 1026, 'departamento': 'DEPARTAMENTO_DESCONOCIDO', 'provincia_id': 26, 'provincia': 'CHUBUT'},
+                  {'departamento_id': 1030, 'departamento': 'DEPARTAMENTO_DESCONOCIDO', 'provincia_id': 30, 'provincia': 'ENTRE RIOS'},
+                  {'departamento_id': 1034, 'departamento': 'DEPARTAMENTO_DESCONOCIDO', 'provincia_id': 34, 'provincia': 'FORMOSA'},
+                  {'departamento_id': 1038, 'departamento': 'DEPARTAMENTO_DESCONOCIDO', 'provincia_id': 38, 'provincia': 'JUJUY'},
+                  {'departamento_id': 1042, 'departamento': 'DEPARTAMENTO_DESCONOCIDO', 'provincia_id': 42, 'provincia': 'LA PAMPA'},
+                  {'departamento_id': 1046, 'departamento': 'DEPARTAMENTO_DESCONOCIDO', 'provincia_id': 46, 'provincia': 'LA RIOJA'},
+                  {'departamento_id': 1050, 'departamento': 'DEPARTAMENTO_DESCONOCIDO', 'provincia_id': 50, 'provincia': 'MENDOZA'},
+                  {'departamento_id': 1054, 'departamento': 'DEPARTAMENTO_DESCONOCIDO', 'provincia_id': 54, 'provincia': 'MISIONES'},
+                  {'departamento_id': 1058, 'departamento': 'DEPARTAMENTO_DESCONOCIDO', 'provincia_id': 58, 'provincia': 'NEUQUEN'},
+                  {'departamento_id': 1062, 'departamento': 'DEPARTAMENTO_DESCONOCIDO', 'provincia_id': 62, 'provincia': 'RIO NEGRO'},
+                  {'departamento_id': 1066, 'departamento': 'DEPARTAMENTO_DESCONOCIDO', 'provincia_id': 66, 'provincia': 'SALTA'},
+                  {'departamento_id': 1070, 'departamento': 'DEPARTAMENTO_DESCONOCIDO', 'provincia_id': 70, 'provincia': 'SAN JUAN'},
+                  {'departamento_id': 1074, 'departamento': 'DEPARTAMENTO_DESCONOCIDO', 'provincia_id': 74, 'provincia': 'SAN LUIS'},
+                  {'departamento_id': 1078, 'departamento': 'DEPARTAMENTO_DESCONOCIDO', 'provincia_id': 78, 'provincia': 'SANTA CRUZ'},
+                  {'departamento_id': 1082, 'departamento': 'DEPARTAMENTO_DESCONOCIDO', 'provincia_id': 82, 'provincia': 'SANTA FE'},
+                  {'departamento_id': 1086, 'departamento': 'DEPARTAMENTO_DESCONOCIDO', 'provincia_id': 86, 'provincia': 'SANTIAGO DEL ESTERO'},
+                  {'departamento_id': 1090, 'departamento': 'DEPARTAMENTO_DESCONOCIDO', 'provincia_id': 90, 'provincia': 'TUCUMAN'},
+                  {'departamento_id': 1094, 'departamento': 'DEPARTAMENTO_DESCONOCIDO', 'provincia_id': 94, 'provincia': 'TIERRA DEL FUEGO'}],
+                  ignore_index=True)
+
+"""Partimos en sub-dataframes: """
+
+""" DICCIONARIO DEPARTAMENTO"""
+
+df4_departamento = df4[['departamento_id', 'departamento']].drop_duplicates().reset_index(drop=True)
+
+""" DICCIONARIO PROVINCIA """
+
+#correcciones para que df4 sea igual a df3
+df4_provincia = df4[['provincia_id','provincia']].drop_duplicates().reset_index(drop =True)
+
+"""Armamos el diccionario de DF4"""
+
+# df4_dict es la versión normalizada de df4 que se conecta mediante la PK con df4_departamento y df4_provincia
+df4_dict = df4.drop('departamento',axis=1)
+df4_dict = df4_dict.drop('provincia',axis=1)
+
+#%%
+""" DF3 : LISTADO DE LOCALIDADES CENSALES SEGÚN EL INDEC """
+
+"""
 Como la consigna del tp nos indica:
-"Esta fuente permite asociar a la fuente primaria “Padrón de Operadores Orgánicos
+
+     "Esta fuente permite asociar a la fuente primaria “Padrón de Operadores Orgánicos
 Certificados” con los datos de departamento. Lamentablemente la fuente primaria,
 en su campo departamento parece mezclar datos de departamento y ciudad, entre
 otras cosas. Esa fuente también tiene inconvenientes en cuanto al formato y
@@ -142,73 +202,168 @@ Por lo cual debemos vincular ambos dataframe por medio de los nombres de departa
 e incluir en el df1 los departamento_id correspondientes a cada departamento que aparecen en df3.
 """
 
-#manejamos tuplas con nans y valores sin definir
-df3.loc[df3.funcion.isna(),"funcion"]='SIN FUNCIÓN'
-df3.loc[df3.municipio.isna(),"municipio"]=sin_definir
-df3.loc[df3.municipio_id.isna(),"municipio_id"]=-99
-df3.loc[df3.departamento_id.isna(),"departamento_id"]=-99
+# Partimos en diccionarios para cada ID, para provincia_id, municipio_id, departamento_id
 
-
-df3_x = df3.loc[:,['departamento_id','departamento','funcion','nombre','provincia']]
-
-dpto_y_provincia3 = df3.loc[:,['departamento_id','departamento','provincia']].drop_duplicates()
-
-id_departamento = df3.loc[:,['departamento_id']].drop_duplicates()
-
-#PARTIMOS PROVINCIA
 df3_provincia = df3[['provincia_id','provincia']].drop_duplicates().reset_index(drop =True)
-#correccion para que se asemeje a df4
+
 df3_provincia=df3_provincia.sort_values(by=['provincia_id']) 
-df3_dict = df3.drop('provincia',axis=1)
 
-#PARTIMOS MUNICIPIO
 df3_municipio = df3[['municipio_id', 'municipio']].drop_duplicates().reset_index(drop=True)
-df3_dict = df3.drop('municipio',axis=1)
 
-#PARTIMOS DEPARTAMENTO
 df3_departamento = df3[['departamento_id', 'departamento']].drop_duplicates().reset_index(drop=True)
-df3_dict = df3.drop('departamento',axis=1)
 
-#PARTIMOS LOCALIDAD
 df3_localidad = df3[['id', 'nombre','funcion','centroide_lat','centroide_lon','categoria','fuente']].drop_duplicates().reset_index(drop=True)
-df3_dict = df3.drop(labels=['nombre','funcion','centroide_lat','centroide_lon','categoria','fuente'],axis=1)
+
+
+df3_limpio = df3.drop('provincia',axis=1)
+df3_limpio = df3_limpio.drop('municipio',axis=1)
+df3_limpio = df3_limpio.drop('departamento',axis=1)
+df3_limpio = df3_limpio.drop(labels=['nombre','funcion','centroide_lat','centroide_lon','categoria','fuente'],axis=1)
 
 """Ahora vinculariamos los df pero nos damos cuenta al hacerlo que hay varios departamentos con el mismo nombre 
 pero en distintas provincias. Como ejemplo, tenemos GENERAL ROCA que esta tanto en RÍO NEGRO como en CÓRDOBA.
-Por eso también tenemos que tener en cuenta las provincias a la hora de vincular los df
+Por eso también tenemos que tener en cuenta las provincias_id a la hora de vincular los df
 """
 
 df1['nombre'] = df1['departamento']
+# Para el MERGE
 
 df1.loc[df1['departamento'].str.contains('CAPITAL'),'departamento'] = 'CAPITAL'
+# Cambia SALTA CAPITAL -> CAPITAL, ya que CAPITAL en la provincia de SALTA tiene un departamento_ID
 
-#Hacemos el merge
+# MERGE (LEFT JOIN) para añadir Departamento_IDs al primer df.
+
+""" 1 ° MERGE. Primero merge con los nombres de departamento del df3.
+
+2 ° MERGE. Luego merge con los nombres de localidad del df3,
+ya que el df1 tiene nombres de localidad en la columna departamento en algunas entradas.
+
+3 ° MERGE. Y por último merge con la df4 que es el diccionario de departamentos. """
+
 df1= df1.merge(df3[['provincia_id','departamento','departamento_id']].drop_duplicates() , on=['provincia_id','departamento'], how='left')
 df1= df1.merge(df3[['provincia_id','nombre','departamento_id']].drop_duplicates() , on=['provincia_id','nombre'], how='left',suffixes=['_1','_2'])
 df1= df1.merge(df4[['provincia_id','departamento','departamento_id']].drop_duplicates() , on=['provincia_id','departamento'], how='left')
 df1['departamento_combinado'] = df1['departamento_id_1'].combine_first(df1['departamento_id_2'])
 df1['departamento_id_final'] = df1['departamento_combinado'].combine_first(df1['departamento_id'])
 
+
 df1 = df1.drop(['nombre','departamento_id_1','departamento_id_2','departamento_id','departamento_combinado'],axis=1)
-
-#Por último ponemos los id al lado de los departamentos
 df1 = df1.rename(columns ={'departamento_id_final':'departamento_id'})
-df1.insert(2,'departamento_id',df1.pop('departamento_id'))
-
-"""En total df1_corregido tiene 173 NaNs. Si bien todavia quedan esa cantidad de NaNs, originalmente el df1 no tenia IDs de 
-departamentos, y ahora tiene 960 filas que si tienen id de departamento.
-Esto es verificable con el siguiente comando.
-"""
+df1.insert(3,'departamento_id',df1.pop('departamento_id'))
 
 print('Cantidad de NaNs en la columna departamento_id del df1(Padron):', len(df1.loc[df1.departamento_id.isna(),'departamento_id']))
 
-df1 = df1.dropna(subset=['departamento_id'])
+#%%
+""" ESTOS 124 NaNs corresponden a departamentos como OPEN DOOR, los cuales no aparecen en ningun df, 
+ ni en el DF 4, ni en el DF 3 (ni como departamento, ni localidad).
+ Por lo tanto, decimos asignarles un ID generico que creamos nosotros mismos. El ID generico es para departamentos 
+ desconocidos de cada provincia. """
+
+dptos_desc = df4.loc[df4.departamento == 'DEPARTAMENTO_DESCONOCIDO',['departamento_id','departamento','provincia_id']]
+df1= df1.merge(dptos_desc[['provincia_id','departamento_id']], on=['provincia_id'], how='left', suffixes = ['_1','_2'])
+df1['departamento_id'] = df1['departamento_id_1'].combine_first(df1['departamento_id_2'])
+df1 = df1.drop(['departamento_id_1','departamento_id_2'],axis=1)
+df1.insert(3,'departamento_id',df1.pop('departamento_id'))
+
+print('Cantidad de NaNs en la columna departamento_id del df1(Padron):', len(df1.loc[df1.departamento_id.isna(),'departamento_id']))
+
+#Exito
 
 #%%
-"""##df1:padron
+""" DF2 : SALARIOS PROMEDIOS PRIVADOS """
 
-###Tratamiento de **nans** en columna rubro y producto
+""" Como saber cuantos registros de la columna 'w_median' son inferiores a 0 """
+
+df2_salarios_negativos = df2.loc[df2['w_median'] < 0] 
+
+
+""" ¿Cuánto representa esa cantidad respecto del total? """
+
+len(df2_salarios_negativos)/len(df2)*100 # 22,42 %
+
+#Luego para ubicar los valores NaN en la tabla
+
+NaN_filas = df2[df2.isna().any(axis=1)] # Con esto sabemos cuantas filas tienen al menos 1 NaN #9156
+NaN_columnas = df2.columns[df2.isna().any()].tolist() # Con esto sabemos que columnas tienen NaN
+
+# Y ahora podemos fijarnos si los NaN aparecen simultaneamente en ambas columnas o si se dividen apareciendo a veces
+# en una y a veces en la otra.
+
+dptoNaN = df2['departamento_id'].isna() # Retorna 9156
+provNaN = df2['provincia_id'].isna() # Retorna 9156
+
+# Pero con esto no nos alcanza asi que por último chequeamos si cada vez que aparece False o True en dptoNaN 
+# se corresponde con los False o True de provNaN. Eso daria una serie de Pandas llena de valores True. Y si el sum()
+# (que solo cuenta los True) es igual a la len del dataframe original entonces cada vez que aparece NaN en una aparece
+# en la otra.
+
+(dptoNaN == provNaN).sum() == len(df2)  # Esto da True.
+
+df2_limpio=df2.dropna() 
+
 """
+Armamos otro dataframe sin los NaNs. 
+El df2 original se puede preservarpor si se quiere hacer un análisis 
+exclusivamente de los salarios y el sector productivo del cual provienen.
+"""
+
+#%%
+""" DF 5 : DICCIONARIO DE CLASES """
+
+""" El DF 5 tiene un valor NaN cuando 'clae2' es igual a 999. 
+Esto es debido a que el valor 'OTROS' no tiene asignada una letra. Por lo que decidimos asignarle la Z. """
+
+df5.loc[85,'letra'] = 'Z'
+
+"""Dividimos en sub-dataframes: """
+
+""" DICCIONARIO CLAE2"""
+
+df5_clae2 = df5[['clae2', 'clae2_desc']].drop_duplicates().reset_index(drop=True)
+
+""" DICCIONARIO LETRA"""
+
+df5_letra = df5[['letra', 'letra_desc']].drop_duplicates().reset_index(drop=True)
+
+""" DF 5 LIMPIO """
+
+df5_limpio = df5.drop('clae2_desc',axis=1)
+df5_limpio = df5_limpio.drop('letra_desc',axis=1)
+
+""" es dificil normalizar df5_clae2 ya que las descripciones estan pensadas 
+ como string y no para separarse en valores atomizados. """
+
+## atomizarColumna(df5_clae2,'clae2_desc', ', ')
+## atomizarColumna(df5_clae2,'clae2_desc',' y ')
+
+
+"""NORMALIZAMOS df5_letra 
+
+# Para ello hace falta renombrar gran parte de las descripciones ya que tienen errores de ortografía 
+ o cosas como puntos y coma/dos puntos en lugares donde no van. """
+
+
+df5_letra = df5_letra.replace({'EXPLOTACION DE MINAS Y CANTERAS' : 'EXPLOTACIÓN DE MINAS Y EXPLOTACION DE CANTERAS',
+                               ' SUMINISTRO DE ELECTRICIDAD, GAS, VAPOR Y AIRE ACONDICIONADO' : 'SUMINISTRO DE ELECTRICIDAD,SUMINISTRO DE GAS, SUMINISTRO DE VAPOR, SUMINISTRO DE AIRE ACONDICIONADO',
+                            ' SUMINISTRO DE AGUA; CLOACAS; GESTIÓN DE RESIDUOS Y RECUPERACIÓN DE MATERIALES Y SANEAMIENTO PUBLICO':'SUMINISTRO DE AGUA, CLOACAS, GESTION DE RESIDUOS, RECUPERACIÓN DE MATERIALES, SANEAMIENTO PUBLICO',
+                        	' COMERCIO AL POR MAYOR Y AL POR MENOR; REPARACIÓN DE VEHÍCULOS AUTOMOTORES Y MOTOCICLETAS' :'COMERCIO AL POR MAYOR, COMERCIO AL POR MENOR, REPARACION DE VEHICULOS AUTOMOTORES, REPARACION DE MOTOCICLETAS',
+                        	' SERVICIO DE TRANSPORTE Y ALMACENAMIENTO':'SERVICIO DE TRANSPORTE, SERVICIO DE ALMACENAMIENTO',
+                        	' SERVICIOS PROFESIONALES, CIENTÍFICOS Y TÉCNICOS': 'SERVICIOS PROFESIONALES, SERVICIOS CIENTIFICOS, SERVICIOS TECNICOS',
+                        	' SERVICIOS  ARTÍSTICOS, CULTURALES, DEPORTIVOS  Y DE ESPARCIMIENTO': 'SERVICIOS ARTISTICOS, SERVICIOS CULTURALES, SERVICIOS DEPORTIVOS, SERVICIOS DE ESPARCIMIENTO',
+                            })
+
+#atomizarColumna(df5_letra,'letra_desc', ', ')
+#atomizarColumna(df5_letra,'letra_desc',' y ')
+    
+
+df5_letra.letra_desc = df5_letra.letra_desc.apply(sacar_espacios_en_extremos) 
+# esta función elimina los espacios al principio y final de las palabras gracias a la función strip
+
+
+#%%
+""" DF 1 : PADRON """
+
+"--------------Tratamiento de NaNs-------------------"
 
 #En columna rubro y productos vemos los casos particulares
 #Veamos si para un producto."CAMPO INCULTO" aplica un valor en especifico para 
@@ -401,7 +556,7 @@ df1.loc[df1.rubro.str.contains("PROCESAMIENTO FRUTALES Y HORTALIZAS") |
         df1.rubro.str.contains("PROCESAMIENTO CEREALES Y OLEAGINOSAS") |
         df1.rubro.str.contains("PROCESAMIENTO DE CEREALES Y OLEAGINOSAS") |
         df1.rubro.str.contains("PROCESAMIENTO DE MANI Y SOJA")
-        ,"rubro"] = "PROCESAMIENTO"
+        ,"rubro"] = "PROCESAMIENTO"cia_id'}, inplace=True)
 
 #Veamos mas casos
 df1.loc[df1.rubro.str.contains(" Y ") ,["rubro","productos"]].rubro.value_counts()
@@ -435,119 +590,21 @@ df1.loc[df1.rubro.str.contains("EXTRACCION Y FRACCIONAMIENTO DE MIEL"),["rubro",
 atomizarColumna(df1,"rubro",' Y ')
 atomizarColumna(df1,"rubro",'-')
 df1.rubro = df1.rubro.apply(sacar_espacios_en_extremos)
-
-#%%
-"""##df2:salarios"""
-
-#Como saber cuantos registros de la columna 'w_median' son inferiores a 0
-
-df2_salario_negativo = df2.loc[df2['w_median'] < 0] 
-
-
-#Y para saber cuanto representan esa cantidad respecto del total simplemente calculamos
-
-len(df2_salario_negativo)/len(df2)*100
-
-#Luego para ubicar los valores NaN en la tabla
-
-NaN_filas = df2[df2.isna().any(axis=1)] # Con esto sabemos cuantas filas tienen al menos 1 NaN
-NaN_columnas = df2.columns[df2.isna().any()].tolist() # Con esto sabemos que columnas tienen NaN
-
-# Y ahora podemos fijarnos si los NaN aparecen simultaneamente en ambas columnas o si se dividen apareciendo a veces
-# en una y a veces en la otra.
-
-dptoNaN = df2['codigo_departamento_indec'].isna() # Retorna 9156
-provNaN = df2['provincia_id'].isna() # Retorna 9156
-
-# Pero con esto no nos alcanza asi que por último chequeamos si cada vez que aparece False o True en dptoNaN 
-# se corresponde con los False o True de provNaN. Eso daria una serie de Pandas llena de valores True. Y si el sum()
-# (que solo cuenta los True) es igual a la len del dataframe original entonces cada vez que aparece NaN en una aparece
-# en la otra.
-
-(dptoNaN == provNaN).sum() == len(df2)  # Esto da True.
-
-df2_sinNaN=df2.dropna() #Armamos otro dataframe sin los NaNs. El df2 original se puede preservar
-#por si se quiere hacer un análisis exclusivamente de los salarios y el sector productivo del cual provienen.
-
-
-#%%
-"""## Df4: Diccionario de Departamentos
-
-Partimos en sub-dataframes: """
-
-"""Partimos departamento"""
-
-df4_departamento = df4[['departamento_id', 'departamento']].drop_duplicates().reset_index(drop=True)
-
-"""Partimos provincia """
-
-#correcciones para que df4 sea igual a df3
-df4_provincia = df4[['provincia_id','provincia']].drop_duplicates().reset_index(drop =True)
-
-"""Armamos el diccionario de DF4"""
-
-# df4_dict es la versión normalizada de df4 que se conecta mediante la PK con df4_departamento y df4_provincia
-df4_dict = df4.drop('departamento',axis=1)
-df4_dict = df4_dict.drop('provincia',axis=1)
-
-"""##df5:clases"""
-
-# EL df5 tiene un valor NaN cuando 'clae2' es igual a 999. Esto es debido a que el valor 'OTROS' no tiene asignada una
-# letra. Por lo que decidimos asignarle la Z.
-
-df5.loc[85,'letra'] = 'Z'
-
-# PARTIENDO EL DATAFRAME 5
-
-# PARTIMOS CLAE2_DESC
-
-df5_clae2 = df5[['clae2', 'clae2_desc']].drop_duplicates().reset_index(drop=True)
-
-# PARTIMOS LETRA_DESC
-
-df5_letra = df5[['letra', 'letra_desc']].drop_duplicates().reset_index(drop=True)
-
-# df5_dict es la versión normalizada de df5 que se conecta mediante la PK con df5_clae2 y df5_letra
-df5_dict = df5.drop('clae2_desc',axis=1)
-df5_dict = df5_dict.drop('letra_desc',axis=1)
-
-""" es dificil normalizar df5_clae2 ya que las descripciones estan pensadas como string y no para separarse en valores atomizados.
-# NORMALIZAMOS df5_clae2
-
-atomizarColumna(df5_clae2,'clae2_desc', ', ')
-atomizarColumna(df5_clae2,'clae2_desc',' y ')
-"""
-
-# NORMALIZAMOS df5_letra
-
-# Para ello hace falta renombrar gran parte de las descripciones ya que se pensaron para estar como un string
-# pero nosotros queremos atomizar cada atributo para que esten en 1FN en vez de pensarlos como un string.
-
-df5_letra = df5_letra.replace({'EXPLOTACION DE MINAS Y CANTERAS' : 'EXPLOTACIÓN DE MINAS Y EXPLOTACION DE CANTERAS',
-                               ' SUMINISTRO DE ELECTRICIDAD, GAS, VAPOR Y AIRE ACONDICIONADO' : 'SUMINISTRO DE ELECTRICIDAD,SUMINISTRO DE GAS, SUMINISTRO DE VAPOR, SUMINISTRO DE AIRE ACONDICIONADO',
-                            ' SUMINISTRO DE AGUA; CLOACAS; GESTIÓN DE RESIDUOS Y RECUPERACIÓN DE MATERIALES Y SANEAMIENTO PUBLICO':'SUMINISTRO DE AGUA, CLOACAS, GESTION DE RESIDUOS, RECUPERACIÓN DE MATERIALES, SANEAMIENTO PUBLICO',
-                        	' COMERCIO AL POR MAYOR Y AL POR MENOR; REPARACIÓN DE VEHÍCULOS AUTOMOTORES Y MOTOCICLETAS' :'COMERCIO AL POR MAYOR, COMERCIO AL POR MENOR, REPARACION DE VEHICULOS AUTOMOTORES, REPARACION DE MOTOCICLETAS',
-                        	' SERVICIO DE TRANSPORTE Y ALMACENAMIENTO':'SERVICIO DE TRANSPORTE, SERVICIO DE ALMACENAMIENTO',
-                        	' SERVICIOS PROFESIONALES, CIENTÍFICOS Y TÉCNICOS': 'SERVICIOS PROFESIONALES, SERVICIOS CIENTIFICOS, SERVICIOS TECNICOS',
-                        	' SERVICIOS  ARTÍSTICOS, CULTURALES, DEPORTIVOS  Y DE ESPARCIMIENTO': 'SERVICIOS ARTISTICOS, SERVICIOS CULTURALES, SERVICIOS DEPORTIVOS, SERVICIOS DE ESPARCIMIENTO',
-                            })
-
-# Una vez renombrado todo a mano porque hacer una función tardaria demasiado. Podemos atomizar
-
-atomizarColumna(df5_letra,'letra_desc', ', ')
-atomizarColumna(df5_letra,'letra_desc',' y ')
-df5_letra.letra_desc = df5_letra.letra_desc.apply(sacar_espacios_en_extremos) # esta función elimina los espacios al principio y final de las palabras gracias a la función strip
-
 #%%
 
 """##Exportamos todos los csv a la carpeta TablasLimpias
 
 """
 
-df3.to_csv('./TablasLimpias/df3.csv', index=False)
 df1.to_csv('./TablasLimpias/df1.csv', index=False)
-df4_departamento.to_csv('./TablasLimpias/departamentos_df4.csv', index=False)
-df4_provincia.to_csv('./TablasLimpias/provincias_df4.csv', index=False)
-df4_dict.to_csv('./TablasLimpias/df4.csv', index=False)
-df5_letra.to_csv('./TablasLimpias/categorias.csv', index=False)
-df5_dict.to_csv('./TablasLimpias/df5.csv', index=False)
+df3_limpio.to_csv('./TablasLimpias/df3_limpio.csv', index=False)
+df3_provincia.to_csv('./TablasLimpias/df3_provincias.csv', index=False)
+df3_municipio.to_csv('./TablasLimpias/df3_municipios.csv', index=False) 
+df3_departamento.to_csv('./TablasLimpias/df3_departamentos.csv', index=False) 
+df3_localidad.to_csv('./TablasLimpias/df3_localidades.csv', index=False)
+df4_limpio.to_csv('./TablasLimpias/df4_limpio.csv', index=False)
+df4_departamento.to_csv('./TablasLimpias/df4_departamentos.csv', index=False)
+df4_provincia.to_csv('./TablasLimpias/df4_provincias.csv', index=False)
+df5_limpio.to_csv('./TablasLimpias/df5.csv', index=False)
+df5_clae2.to_csv('./TablasLimpias/df5_clae2.csv', index=False)
+df5_letra.to_csv('./TablasLimpias/df5_letras.csv', index=False)
