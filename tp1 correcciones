@@ -13,6 +13,7 @@ Original file is located at
 
 import pandas as pd
 import re 
+import seaborn as sns
 from unidecode import unidecode
 padron = './TablasOriginales/padron-de-operadores-organicos-certificados.csv'
 salario = './TablasOriginales/w_median_depto_priv_clae2.csv'
@@ -590,10 +591,14 @@ df1 = df1.astype({"clae2": int})
 print('Cantidad de NaNs en la columna clae2 que recien agregamos:',len(df1[df1.clae2.isna()]))
 
 #%%
-#Checkpoint
+df1_certificadora = df1[['Certificadora_id','certificadora_deno']].drop_duplicates().reset_index(drop = True)
+df1_certificadora=df1_certificadora.sort_values(by=['Certificadora_id']) 
+certificadora = df1_certificadora.rename(columns ={'Certificadora_id' : 'id_certificadora'})
 
-df1_padron_atom = './dataframes/checkpoints/padron_atomizado.csv'
-df1 = pd.read_csv(df1_padron_atom)
+df1_categoria = df1[['categoria_id','categoria_desc']].drop_duplicates().reset_index(drop = True)
+df1_categoria=df1_categoria.sort_values(by=['categoria_id'])
+categoria = df1_categoria.rename(columns ={'categoria_id' : 'id_categoria'})
+
 
 #%%
 
@@ -612,6 +617,12 @@ df4_provincia = df4_provincia.rename(columns ={'provincia_id' : 'id_provincia','
 df5_clae2 = df5_clae2.rename(columns ={'clae2':'id_clase','clae2_desc' : 'descripcion'})
 
 #%%
+#Checkpoint
+
+df1_padron_atom = './dataframes/checkpoints/padron_atomizado.csv'
+df1 = pd.read_csv(df1_padron_atom)
+
+#%%%
 
 """##Exportamos todos los csv a la carpeta TablasLimpias
 
@@ -620,12 +631,22 @@ df5_clae2 = df5_clae2.rename(columns ={'clae2':'id_clase','clae2_desc' : 'descri
 
 
 df1.to_csv('./TablasLimpias/operador.csv', index=False)
-df2.to_csv('./TablasLimpias/salario.csv', index=False)
+df1_productos.to_csv('./TablasLimpias/producto.csv', index=False)
 df5_clae2.to_csv('./TablasLimpias/clase.csv', index=False)
+categoria.to_csv('./TablasLimpias/categoria.csv', index=False)
 df4_departamento.to_csv('./TablasLimpias/departamento.csv', index=False)
 df4_provincia.to_csv('./TablasLimpias/provincia.csv', index=False)
+certificadora.to_csv('./TablasLimpias/certificadora.csv', index=False)
+df2.to_csv('./TablasLimpias/salario.csv', index=False)
 
 df3_limpio.to_csv('./TablasLimpias/df3_limpio.csv', index=False)
 df4_limpio.to_csv('./TablasLimpias/df4_limpio.csv', index=False)
 df5_limpio.to_csv('./TablasLimpias/df5.csv', index=False)
 df5_letra.to_csv('./TablasLimpias/df5_letras.csv', index=False)
+
+#%%
+
+provincias = df4_provincia.nombre_provincia.tolist()
+
+sns.boxplot(data=df1, x="provincia_id", y="productos", hue="id_operador")
+
